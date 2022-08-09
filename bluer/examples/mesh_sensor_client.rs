@@ -5,12 +5,12 @@
 //! [burrboard/gateway]$ sudo /usr/libexec/bluetooth/bluetooth-meshd --config ${PWD}/deploy/bluez/example/meshcfg --storage ${PWD}/deploy/bluez/example/mesh --debug
 //!
 //! Example receive
-//! [bluer]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
+//! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
 //!
 //! Example send
-//! [burrboard/gateway]$ TOKEN=dae519a06e504bd3 ./app/temp-device.py
+//! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_server -- --token dae519a06e504bd3
 
-use bluer::{mesh::{application::Application, *}};
+use bluer::mesh::{application::Application, *};
 use clap::Parser;
 use dbus::Path;
 use drogue_device::drivers::ble::mesh::{
@@ -22,8 +22,8 @@ use drogue_device::drivers::ble::mesh::{
     pdu::ParseError,
 };
 use futures::{pin_mut, StreamExt};
-use tokio::signal;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
+use tokio::{signal, time::sleep};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let _registered = mesh.application(root_path.clone(), sim).await?;
+    let registered = mesh.application(root_path.clone(), sim).await?;
 
     let _node = mesh.attach(root_path.clone(), &args.token).await?;
 
@@ -87,7 +87,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    //TODO unregister
+    drop(registered);
+    sleep(Duration::from_secs(1)).await;
 
     Ok(())
 }

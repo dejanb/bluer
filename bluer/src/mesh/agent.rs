@@ -1,11 +1,9 @@
 //! Implement Provisioner bluetooth provisoner agent
 
-use crate::{method_call, SessionInner, mesh::ReqError};
+use crate::{mesh::ReqError, method_call, SessionInner};
 use std::sync::Arc;
 
-use dbus::{
-    nonblock::{Proxy, SyncConnection},
-};
+use dbus::nonblock::{Proxy, SyncConnection};
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
 use hex::FromHex;
 
@@ -21,7 +19,6 @@ pub struct ProvisionAgent {
 }
 
 impl ProvisionAgent {
-
     pub(crate) fn new(inner: Arc<SessionInner>) -> Self {
         Self { inner }
     }
@@ -35,19 +32,22 @@ impl ProvisionAgent {
 
     pub(crate) fn register_interface(cr: &mut Crossroads) -> IfaceToken<Arc<Self>> {
         cr.register(INTERFACE, |ib: &mut IfaceBuilder<Arc<Self>>| {
-            ib.method_with_cr_async("DisplayNumeric", ("type", "value"), (), |ctx, cr, (_type, _value,): (String, u32)| {
-                method_call(ctx, cr, move |_reg: Arc<Self>| async move {
-                    println!("DisplayNumeric");
-                    Ok(())
-                })
-            });
+            ib.method_with_cr_async(
+                "DisplayNumeric",
+                ("type", "value"),
+                (),
+                |ctx, cr, (_type, _value): (String, u32)| {
+                    method_call(ctx, cr, move |_reg: Arc<Self>| async move {
+                        println!("DisplayNumeric");
+                        Ok(())
+                    })
+                },
+            );
             ib.method_with_cr_async("PromptStatic", ("type",), ("value",), |ctx, cr, (_type,): (String,)| {
                 method_call(ctx, cr, move |_reg: Arc<Self>| async move {
                     println!("Prompt static");
                     let mut input_string = String::new();
-                    stdin().read_line(&mut input_string)
-                    .ok()
-                    .expect("Failed to read line");
+                    stdin().read_line(&mut input_string).ok().expect("Failed to read line");
 
                     println!("str {}", input_string);
 
@@ -60,7 +60,7 @@ impl ProvisionAgent {
                         }
                     }
 
-                    let hex = Vec::from_hex(input_string.trim()).map_err(|_|  ReqError::Failed)?;
+                    let hex = Vec::from_hex(input_string.trim()).map_err(|_| ReqError::Failed)?;
 
                     println!("hex {:?}", hex);
 
@@ -74,5 +74,4 @@ impl ProvisionAgent {
             });
         })
     }
-
 }

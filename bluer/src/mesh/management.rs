@@ -10,9 +10,7 @@ use dbus::{
 };
 use uuid::Uuid;
 
-use crate::{
-    mesh::{SERVICE_NAME, TIMEOUT},
-};
+use crate::mesh::{SERVICE_NAME, TIMEOUT};
 
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Management1";
 
@@ -29,7 +27,11 @@ impl Management {
 
     /// Publish message to the mesh
     pub async fn add_node(&self, uuid: Uuid) -> Result<()> {
-        self.call_method("AddNode", (uuid.as_bytes().to_vec(), HashMap::<String, Variant<Box<dyn RefArg + 'static>>>::new())).await?;
+        self.call_method(
+            "AddNode",
+            (uuid.as_bytes().to_vec(), HashMap::<String, Variant<Box<dyn RefArg + 'static>>>::new()),
+        )
+        .await?;
 
         Ok(())
     }

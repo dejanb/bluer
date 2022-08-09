@@ -4,24 +4,29 @@
 //! Example meshd
 //! [burrboard/gateway]$ sudo /usr/libexec/bluetooth/bluetooth-meshd --config ${PWD}/deploy/bluez/example/meshcfg --storage ${PWD}/deploy/bluez/example/mesh --debug
 //!
-//! Example receive
-//! [bluer]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
+//! Example device join
+//! [burrboard/gateway]$ app/temp-device.py join
 //!
-//! Example send
-//! [burrboard/gateway]$ TOKEN=dae519a06e504bd3 ./app/temp-device.py
+//! Example provisioner
+//! [bluer]$ RUST_LOG=TRACE cargo run --example mesh_provisioner -- --token 84783e12f11c4dcd --uuid 4bd9876a3e4844bbb4339ef42f614f1f
 
-use bluer::{mesh::{application::Application, *, provisioner::{ProvisionerControlHandle, Provisioner}}, Uuid};
+use bluer::{
+    mesh::{
+        application::Application,
+        provisioner::{Provisioner, ProvisionerControlHandle},
+        *,
+    },
+    Uuid,
+};
 use clap::Parser;
 use dbus::Path;
-use drogue_device::drivers::ble::mesh::{
-    model::{
-        foundation::configuration::{ConfigurationServer, ConfigurationClient},
-    },
+use drogue_device::drivers::ble::mesh::model::foundation::configuration::{
+    ConfigurationClient, ConfigurationServer,
 };
-use futures::{StreamExt};
-use tokio::{signal, sync::mpsc};
+use futures::StreamExt;
+use std::{sync::Arc, time::Duration};
+use tokio::{signal, sync::mpsc, time::sleep};
 use tokio_stream::wrappers::ReceiverStream;
-use std::sync::Arc;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -58,14 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
             control_handle: Some(element_handle),
         }],
-        provisioner: Some(Provisioner {
-            control_handle: ProvisionerControlHandle {
-                messages_tx: prov_tx,
-            }
-        }),
+        provisioner: Some(Provisioner { control_handle: ProvisionerControlHandle { messages_tx: prov_tx } }),
     };
 
-    let _registered = mesh.application(root_path.clone(), sim).await?;
+    let registered = mesh.application(root_path.clone(), sim).await?;
 
     let node = mesh.attach(root_path.clone(), &args.token).await?;
 
@@ -89,7 +90,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    //TODO unregister
+    println!("Shutting down");
+    drop(registered);
+    sleep(Duration::from_secs(1)).await;
 
     Ok(())
 }

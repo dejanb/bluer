@@ -10,10 +10,7 @@ use dbus::{
 };
 
 use crate::{
-    mesh::{
-        SERVICE_NAME, TIMEOUT,
-        management::Management,
-    },
+    mesh::{management::Management, SERVICE_NAME, TIMEOUT},
     Error, ErrorKind,
 };
 use drogue_device::drivers::ble::mesh::model::{Message, Model, ModelIdentifier};

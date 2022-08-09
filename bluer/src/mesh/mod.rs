@@ -2,17 +2,17 @@
 
 pub mod agent;
 pub mod application;
+pub mod management;
 pub mod network;
 pub mod node;
 pub mod provisioner;
-pub mod management;
 mod types;
 pub use types::*;
 
 use crate::{method_call, Error, ErrorKind, Result, SessionInner, ERR_PREFIX};
 use dbus::{
     arg::{PropMap, RefArg, Variant},
-    nonblock::{stdintf::org_freedesktop_dbus::ObjectManager,Proxy, SyncConnection},
+    nonblock::{stdintf::org_freedesktop_dbus::ObjectManager, Proxy, SyncConnection},
     Path,
 };
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
@@ -188,7 +188,7 @@ impl Stream for ElementControl {
 /// Use [element_control] to obtain controller and associated handle.
 #[derive(Clone)]
 pub struct ElementControlHandle {
-    handle_tx: Arc::<watch::Sender<Option<NonZeroU16>>>,
+    handle_tx: Arc<watch::Sender<Option<NonZeroU16>>>,
     messages_tx: mpsc::Sender<ElementMessage>,
 }
 
@@ -259,10 +259,10 @@ impl From<ReqError> for dbus::MethodErr {
 /// Result of a Bluetooth request to us.
 pub type ReqResult<T> = std::result::Result<T, ReqError>;
 
-    /// Gets all D-Bus objects from the BlueZ service.
-    async fn all_dbus_objects(
-        connection: &SyncConnection,
-    ) -> Result<HashMap<Path<'static>, HashMap<String, PropMap>>> {
-        let p = Proxy::new(SERVICE_NAME, "/", TIMEOUT, connection);
-        Ok(p.get_managed_objects().await?)
-    }
+/// Gets all D-Bus objects from the BlueZ service.
+async fn all_dbus_objects(
+    connection: &SyncConnection,
+) -> Result<HashMap<Path<'static>, HashMap<String, PropMap>>> {
+    let p = Proxy::new(SERVICE_NAME, "/", TIMEOUT, connection);
+    Ok(p.get_managed_objects().await?)
+}

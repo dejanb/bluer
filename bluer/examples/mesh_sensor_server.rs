@@ -4,11 +4,11 @@
 //! Example meshd
 //! [burrboard/gateway]$ sudo /usr/libexec/bluetooth/bluetooth-meshd --config ${PWD}/deploy/bluez/example/meshcfg --storage ${PWD}/deploy/bluez/example/mesh --debug
 //!
-//! Example receive
-//! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_server -- --token 7eb48c91911361da
-//!
 //! Example send
-//! [burrboard/gateway]$ TOKEN=dae519a06e504bd3 ./app/temp-device.py
+//! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_server -- --token dae519a06e504bd3
+//!
+//! Example receive
+//! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
 
 use bluer::mesh::{application::Application, *};
 use clap::Parser;
@@ -23,8 +23,12 @@ use drogue_device::drivers::ble::mesh::{
     },
     pdu::ParseError,
 };
-use tokio::{signal, sync::mpsc, time, time::Duration};
 use std::sync::Arc;
+use tokio::{
+    signal,
+    sync::mpsc,
+    time::{self, sleep, Duration},
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -57,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let _registered = mesh.application(root_path.clone(), sim.clone()).await?;
+    let registered = mesh.application(root_path.clone(), sim.clone()).await?;
 
     let node = mesh.attach(root_path.clone(), &args.token).await?;
 
@@ -94,7 +98,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Shutting down");
-    //TODO unregister
+    drop(registered);
+    sleep(Duration::from_secs(1)).await;
 
     Ok(())
 }
