@@ -107,6 +107,8 @@ pub struct ProvisionerControlHandle {
 #[derive(Clone, Debug)]
 ///Messages sent by provisioner
 pub enum ProvisionerMessage {
+    /// Add node succeded
     AddNodeComplete,
+    /// Add node failed
     AddNodeFailed,
 }

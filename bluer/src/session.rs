@@ -37,7 +37,7 @@ use crate::{
     all_dbus_objects, gatt,
     mesh::{
         agent::ProvisionAgent, application::RegisteredApplication, network::Network,
-        provisioner::RegisteredProvisioner, RegisteredElement,
+        provisioner::RegisteredProvisioner, element::RegisteredElement,
     },
     parent_path, Adapter, Error, ErrorKind, InternalErrorKind, Result, SERVICE_NAME,
 };

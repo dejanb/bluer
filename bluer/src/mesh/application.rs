@@ -9,7 +9,10 @@ use dbus::{
 };
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
 
-use crate::mesh::{Element, RegisteredElement, PATH, SERVICE_NAME, TIMEOUT};
+use crate::mesh::{
+    element::{Element, RegisteredElement},
+    PATH, SERVICE_NAME, TIMEOUT
+};
 use futures::channel::oneshot;
 use std::{fmt, mem::take};
 
@@ -41,6 +44,7 @@ pub struct RegisteredApplication {
     inner: Arc<SessionInner>,
     app: Application,
     agent: ProvisionAgent,
+    /// Registered provisioner
     pub provisioner: Option<RegisteredProvisioner>,
 }
 

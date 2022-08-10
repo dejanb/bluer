@@ -12,7 +12,7 @@ use crate::mesh::{
     all_dbus_objects,
     application::{Application, ApplicationHandle, RegisteredApplication},
     node::Node,
-    ElementConfig, PATH, SERVICE_NAME, TIMEOUT,
+    element::ElementConfig, PATH, SERVICE_NAME, TIMEOUT,
 };
 use uuid::Uuid;
 

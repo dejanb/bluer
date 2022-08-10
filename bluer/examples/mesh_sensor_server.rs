@@ -10,7 +10,7 @@
 //! Example receive
 //! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
 
-use bluer::mesh::{application::Application, *};
+use bluer::mesh::{application::Application, element::*,};
 use clap::Parser;
 use dbus::Path;
 use drogue_device::drivers::ble::mesh::{

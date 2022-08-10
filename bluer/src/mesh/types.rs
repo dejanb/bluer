@@ -101,16 +101,3 @@ where
         }
     }
 }
-
-/// Element message received from dbus
-#[derive(Clone, Debug)]
-pub struct ElementMessage {
-    /// Application key
-    pub key: ApplicationKeyIdentifier,
-    /// Message source
-    pub src: UnicastAddress,
-    /// Message destination
-    pub dest: Address,
-    /// Message payload
-    pub payload: AccessPayload,
-}

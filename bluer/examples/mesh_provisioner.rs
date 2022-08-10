@@ -14,7 +14,7 @@ use bluer::{
     mesh::{
         application::Application,
         provisioner::{Provisioner, ProvisionerControlHandle},
-        *,
+        element::*,
     },
     Uuid,
 };
