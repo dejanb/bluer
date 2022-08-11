@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
             control_handle: Some(element_handle),
         }],
-        provisioner: Some(Provisioner { control_handle: ProvisionerControlHandle { messages_tx: prov_tx } }),
+        provisioner: Some(Provisioner { control_handle: ProvisionerControlHandle { messages_tx: prov_tx }, start_address: 0xbd })
     };
 
     let registered = mesh.application(root_path.clone(), sim).await?;

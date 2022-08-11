@@ -1,6 +1,6 @@
 //! Implement Element bluetooth mesh interface
 
-use crate::{method_call, Error, ErrorKind, Result, SessionInner, ERR_PREFIX};
+use crate::{method_call, Error, ErrorKind, SessionInner};
 use dbus::{
     arg::{RefArg, Variant},
     nonblock::{Proxy, SyncConnection},

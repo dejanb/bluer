@@ -36,39 +36,25 @@ impl ProvisionAgent {
                 "DisplayNumeric",
                 ("type", "value"),
                 (),
-                |ctx, cr, (_type, _value): (String, u32)| {
+                |ctx, cr, (_type, value): (String, u32)| {
                     method_call(ctx, cr, move |_reg: Arc<Self>| async move {
-                        println!("DisplayNumeric");
+                        println!("Enter '{:?}' on the remote device!", value);
                         Ok(())
                     })
                 },
             );
             ib.method_with_cr_async("PromptStatic", ("type",), ("value",), |ctx, cr, (_type,): (String,)| {
                 method_call(ctx, cr, move |_reg: Arc<Self>| async move {
-                    println!("Prompt static");
+                    println!("Please input the value displayed on the device that is beaing provisioned: ");
                     let mut input_string = String::new();
-                    stdin().read_line(&mut input_string).ok().expect("Failed to read line");
-
-                    println!("str {}", input_string);
-
-                    match Vec::from_hex(input_string.trim().clone()) {
-                        Ok(vec) => {
-                            println!("vec {}", vec.len());
-                        }
-                        Err(e) => {
-                            println!("{}", e);
-                        }
-                    }
-
+                    stdin().read_line(&mut input_string).ok().expect("Failed to read input!");
+                    //println!();
                     let hex = Vec::from_hex(input_string.trim()).map_err(|_| ReqError::Failed)?;
-
-                    println!("hex {:?}", hex);
-
-                    //let value = (input_string).as_bytes().to_vec();
                     Ok((hex,))
                 })
             });
             cr_property!(ib, "Capabilities", _reg => {
+                // TODO configure capabilities
                 let mt: Vec<String> = vec!["out-numeric".into(), "static-oob".into()];
                 Some(mt)
             });

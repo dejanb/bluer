@@ -1,7 +1,7 @@
 //! Implement Provisioner bluetooth mesh interface
 
 use crate::{mesh::ReqError, method_call, SessionInner};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use dbus::nonblock::{Proxy, SyncConnection};
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
@@ -16,6 +16,8 @@ pub(crate) const INTERFACE: &str = "org.bluez.mesh.Provisioner1";
 /// Definition of Provisioner interface
 #[derive(Clone)]
 pub struct Provisioner {
+    /// Start address for this provisioner
+    pub start_address: i32,
     /// Control handle for provisioner once it has been registered.
     pub control_handle: ProvisionerControlHandle,
 }
@@ -25,11 +27,12 @@ pub struct Provisioner {
 pub struct RegisteredProvisioner {
     inner: Arc<SessionInner>,
     provisioner: Provisioner,
+    next_address: Arc<Mutex<i32>>,
 }
 
 impl RegisteredProvisioner {
     pub(crate) fn new(inner: Arc<SessionInner>, provisioner: Provisioner) -> Self {
-        Self { inner, provisioner }
+        Self { inner, provisioner: provisioner.clone(), next_address: Arc::new(Mutex::new(provisioner.start_address.clone())) }
     }
 
     fn proxy(&self) -> Proxy<'_, &SyncConnection> {
@@ -81,11 +84,18 @@ impl RegisteredProvisioner {
                 "RequestProvData",
                 ("count",),
                 ("net_index", "unicast"),
-                |ctx, cr, (_count,): (u8,)| {
-                    method_call(ctx, cr, move |_reg: Arc<RegisteredApplication>| async move {
-                        println!("RequestProvData");
-
-                        Ok((0x000 as u16, 0x0bd as u16))
+                |ctx, cr, (count,): (u8,)| {
+                    method_call(ctx, cr, move |reg: Arc<RegisteredApplication>| async move {
+                        match &reg.provisioner {
+                            Some(prov) => {
+                                let adr = prov.next_address.clone();
+                                let mut adr = adr.lock().unwrap();
+                                let res = (0x000 as u16, *adr as u16);
+                                *adr += (count + 1) as i32;
+                                Ok(res)
+                            },
+                            None => Err(dbus::MethodErr::from(ReqError::Failed)),
+                        }
                     })
                 },
             );
