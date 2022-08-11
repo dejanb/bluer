@@ -48,7 +48,6 @@ impl ProvisionAgent {
                     println!("Please input the value displayed on the device that is beaing provisioned: ");
                     let mut input_string = String::new();
                     stdin().read_line(&mut input_string).ok().expect("Failed to read input!");
-                    //println!();
                     let hex = Vec::from_hex(input_string.trim()).map_err(|_| ReqError::Failed)?;
                     Ok((hex,))
                 })

@@ -5,12 +5,14 @@ members = [
 ]
 
 [patch.crates-io]
-embassy = { git = "https://github.com/embassy-rs/embassy.git", rev = "77c7d8f31b89d13117a7294842d60f02950fdd23" }
-embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy.git", rev = "77c7d8f31b89d13117a7294842d60f02950fdd23" }
+embassy = { git = "https://github.com/embassy-rs/embassy.git", rev = "6baddaf53982b75149cb7e91280c571f7fe2e7bc" }
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy.git", rev = "6baddaf53982b75149cb7e91280c571f7fe2e7bc" }
+embassy-hal-common = { git = "https://github.com/embassy-rs/embassy.git", rev = "6baddaf53982b75149cb7e91280c571f7fe2e7bc" }
 #drogue-device = { git="https://github.com/drogue-iot/drogue-device.git", branch="main", features = ["ble", "std"] }
-#drogue-device = { git="https://github.com/dejanb/drogue-device.git", branch="models", features = ["ble", "std"] }
-drogue-device = { path = "../../drogue-iot/drogue-device/device", features = ["ble", "std"] }
-ector = { git = "https://github.com/drogue-iot/ector.git", rev = "53a28cfed7b1030c1e841175ff8a5577251f30c8" }
+drogue-device = { git="https://github.com/dejanb/drogue-device.git", branch="config-models", features = ["ble", "std"] }
+#drogue-device = { path = "../../drogue-iot/drogue-device/device", features = ["ble", "std"] }
+#ector = { git = "https://github.com/drogue-iot/ector.git", rev = "53a28cfed7b1030c1e841175ff8a5577251f30c8" }
+ector = { git = "https://github.com/drogue-iot/ector.git", rev = "63c08489da17ff92c493f21411411ce5ddd6154a" }
 
 # dbus = { path = "../dbus-rs/dbus/", features = ["futures"], optional = true }
 # dbus-tokio = { path = "../dbus-rs/dbus-tokio/", optional = true }

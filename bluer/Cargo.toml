@@ -67,6 +67,8 @@ serde = { version = "1", features = ["derive"], optional = true }
 
 # TODO: Temporary until we find a different location for models
 drogue-device = { version = "0.1.0", features = ["ble", "std"] }
+embassy-embedded-hal = { version = "0.1.0", default-features = false }
+embassy-hal-common = { version = "0.1.0", default-features = false }
 ector = { version = "0.1.0", features = ["std"] }
 heapless = "0.7"
 
