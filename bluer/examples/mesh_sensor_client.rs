@@ -10,17 +10,14 @@
 //! Example send
 //! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_server -- --token dae519a06e504bd3
 
-use bluer::mesh::{application::Application, element::*,};
+use bluer::mesh::{application::Application, element::*};
+use btmesh_common::{opcode::Opcode, CompanyIdentifier, ParseError};
+use btmesh_models::{
+    sensor::{PropertyId, SensorClient, SensorConfig, SensorData, SensorDescriptor, SensorMessage},
+    Message, Model,
+};
 use clap::Parser;
 use dbus::Path;
-use drogue_device::drivers::ble::mesh::{
-    composition::CompanyIdentifier,
-    model::{
-        sensor::{PropertyId, SensorClient, SensorConfig, SensorData, SensorDescriptor, SensorMessage},
-        Message, Model,
-    },
-    pdu::ParseError,
-};
 use futures::{pin_mut, StreamExt};
 use std::{sync::Arc, time::Duration};
 use tokio::{signal, time::sleep};
@@ -69,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             evt = element_control.next() => {
                 match evt {
                     Some(msg) => {
-                        match SensorClient::<SensorModel, 1, 1>::parse(msg.payload.opcode, &msg.payload.parameters).map_err(|_| std::fmt::Error)? {
+                        match SensorClient::<SensorModel, 1, 1>::parse(msg.opcode, &msg.parameters).map_err(|_| std::fmt::Error)? {
                             Some(message) => {
                                 match message {
                                     SensorMessage::Status(status) => {
@@ -100,7 +97,7 @@ pub struct SensorModel;
 pub struct Temperature(f32);
 
 impl SensorConfig for SensorModel {
-    type Data<'m> = Temperature;
+    type Data = Temperature;
 
     const DESCRIPTORS: &'static [SensorDescriptor] = &[SensorDescriptor::new(PropertyId(0x4F), 1)];
 }
@@ -131,9 +128,9 @@ pub struct VendorModel;
 
 impl Model for VendorModel {
     const IDENTIFIER: ModelIdentifier = COMPANY_MODEL;
-    type Message<'m> = VendorMessage;
+    type Message = VendorMessage;
 
-    fn parse<'m>(_opcode: Opcode, _parameters: &'m [u8]) -> Result<Option<Self::Message<'m>>, ParseError> {
+    fn parse(_opcode: Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
         unimplemented!();
     }
 }

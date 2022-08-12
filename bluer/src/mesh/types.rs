@@ -1,15 +1,10 @@
-use core::fmt::Debug;
-use drogue_device::drivers::ble::mesh::model::Model as ConcreteModel;
-pub use drogue_device::drivers::ble::mesh::{
+pub use btmesh_common::{
     address::{Address, UnicastAddress},
-    app::ApplicationKeyIdentifier,
-    model::{Message as ConcreteMessage, ModelIdentifier},
-    pdu::{
-        access::{AccessPayload, Opcode},
-        ParseError,
-    },
-    InsufficientBuffer,
+    InsufficientBuffer, ModelIdentifier,
 };
+use btmesh_common::{opcode::Opcode, ParseError};
+use btmesh_models::{Message as ConcreteMessage, Model as ConcreteModel};
+use core::fmt::Debug;
 
 /// Bluetooth Mesh Message
 pub trait Message {

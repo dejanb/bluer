@@ -10,19 +10,14 @@
 //! Example receive
 //! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
 
-use bluer::mesh::{application::Application, element::*,};
+use bluer::mesh::{application::Application, element::*};
+use btmesh_common::{opcode::Opcode, CompanyIdentifier, ParseError};
+use btmesh_models::{
+    sensor::{PropertyId, SensorConfig, SensorData, SensorDescriptor, SensorMessage, SensorServer, SensorStatus},
+    Message, Model,
+};
 use clap::Parser;
 use dbus::Path;
-use drogue_device::drivers::ble::mesh::{
-    composition::CompanyIdentifier,
-    model::{
-        sensor::{
-            PropertyId, SensorConfig, SensorData, SensorDescriptor, SensorMessage, SensorServer, SensorStatus,
-        },
-        Message, Model,
-    },
-    pdu::ParseError,
-};
 use std::sync::Arc;
 use tokio::{
     signal,
@@ -115,7 +110,7 @@ pub struct SensorModel;
 pub struct Temperature(f32);
 
 impl SensorConfig for SensorModel {
-    type Data<'m> = Temperature;
+    type Data = Temperature;
 
     const DESCRIPTORS: &'static [SensorDescriptor] = &[SensorDescriptor::new(PropertyId(0x4F), 1)];
 }
@@ -140,7 +135,7 @@ impl SensorData for Temperature {
 }
 
 type BoardSensor = SensorServer<SensorModel, 1, 1>;
-type BoardSensorMessage = SensorMessage<'static, SensorModel, 1, 1>;
+type BoardSensorMessage = SensorMessage<SensorModel, 1, 1>;
 
 const COMPANY_IDENTIFIER: CompanyIdentifier = CompanyIdentifier(0x05F1);
 const COMPANY_MODEL: ModelIdentifier = ModelIdentifier::Vendor(COMPANY_IDENTIFIER, 0x0001);
@@ -150,9 +145,9 @@ pub struct VendorModel;
 
 impl Model for VendorModel {
     const IDENTIFIER: ModelIdentifier = COMPANY_MODEL;
-    type Message<'m> = VendorMessage;
+    type Message = VendorMessage;
 
-    fn parse<'m>(_opcode: Opcode, _parameters: &'m [u8]) -> Result<Option<Self::Message<'m>>, ParseError> {
+    fn parse(_opcode: Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
         unimplemented!();
     }
 }

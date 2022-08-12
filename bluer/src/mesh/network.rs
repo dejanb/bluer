@@ -11,8 +11,9 @@ use dbus::{
 use crate::mesh::{
     all_dbus_objects,
     application::{Application, ApplicationHandle, RegisteredApplication},
+    element::ElementConfig,
     node::Node,
-    element::ElementConfig, PATH, SERVICE_NAME, TIMEOUT,
+    PATH, SERVICE_NAME, TIMEOUT,
 };
 use uuid::Uuid;
 

@@ -3,6 +3,7 @@
 use crate::{Result, SessionInner};
 use std::{collections::HashMap, sync::Arc};
 
+use btmesh_common::ModelIdentifier;
 use dbus::{
     arg::{RefArg, Variant},
     nonblock::{Proxy, SyncConnection},
@@ -13,7 +14,7 @@ use crate::{
     mesh::{management::Management, SERVICE_NAME, TIMEOUT},
     Error, ErrorKind,
 };
-use drogue_device::drivers::ble::mesh::model::{Message, Model, ModelIdentifier};
+use btmesh_models::{Message, Model};
 
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Node1";
 
@@ -32,7 +33,7 @@ impl Node {
     }
 
     /// Publish message to the mesh
-    pub async fn publish<'m, M: Model>(&self, message: M::Message<'m>, path: Path<'m>) -> Result<()> {
+    pub async fn publish<'m, M: Model>(&self, message: M::Message, path: Path<'m>) -> Result<()> {
         let model_id = match M::IDENTIFIER {
             ModelIdentifier::SIG(id) => id,
             ModelIdentifier::Vendor(_, id) => id,

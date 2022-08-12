@@ -1,24 +1,25 @@
 //! Implement Element bluetooth mesh interface
 
 use crate::{method_call, Error, ErrorKind, SessionInner};
+use btmesh_common::{
+    address::{Address, UnicastAddress},
+    crypto::application::Aid,
+    opcode::Opcode,
+};
 use dbus::{
     arg::{RefArg, Variant},
     nonblock::{Proxy, SyncConnection},
     Path,
 };
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
-use drogue_device::drivers::ble::mesh::{
-    address::{Address, UnicastAddress},
-    app::ApplicationKeyIdentifier,
-    pdu::access::AccessPayload,
-};
+
+pub use super::types::*;
+use crate::mesh::{ReqError, PATH, SERVICE_NAME, TIMEOUT};
 use futures::Stream;
 use pin_project::pin_project;
 use std::{collections::HashMap, fmt, num::NonZeroU16, pin::Pin, sync::Arc, task::Poll};
 use tokio::sync::{mpsc, watch};
 use tokio_stream::wrappers::ReceiverStream;
-use crate::mesh::{ReqError, PATH, SERVICE_NAME, TIMEOUT};
-pub use super::types::*;
 
 pub(crate) const ELEMENT_INTERFACE: &str = "org.bluez.mesh.Element1";
 
@@ -78,20 +79,19 @@ impl RegisteredElement {
                             data
                         );
 
-                        let key = ApplicationKeyIdentifier::from(u8::try_from(key_index).unwrap_or_default());
+                        let key = Aid::from(u8::try_from(key_index).unwrap_or_default());
                         let src: UnicastAddress = source.try_into().map_err(|_| ReqError::Failed)?;
                         // TODO handle virtual addresses
                         let value = &destination.0;
                         let dest = Address::parse(dbus::arg::cast::<u16>(value).unwrap().to_be_bytes());
                         // TODO properly parse opcode and hanlde multiple octet cases
                         //let payload = AccessPayload::parse(&data).map_err(|_| ReqError::Failed)?;
-                        let payload = AccessPayload {
-                            opcode: Opcode::OneOctet(data[0]),
-                            parameters:  heapless::Vec::from_slice(&data[1..]).map_err(|_|  ReqError::Failed)?,
-                        };
+
+                        let opcode = Opcode::OneOctet(data[0]);
+                        let parameters = data[1..].to_vec();
 
                         let msg = ElementMessage {
-                            key, src, dest, payload
+                            key, src, dest, opcode, parameters
                         };
 
                         match &reg.element.control_handle {
@@ -208,11 +208,13 @@ pub fn element_control() -> (ElementControl, ElementControlHandle) {
 #[derive(Clone, Debug)]
 pub struct ElementMessage {
     /// Application key
-    pub key: ApplicationKeyIdentifier,
+    pub key: Aid,
     /// Message source
     pub src: UnicastAddress,
     /// Message destination
     pub dest: Address,
-    /// Message payload
-    pub payload: AccessPayload,
+    /// Message opcode
+    pub opcode: Opcode,
+    /// Message data
+    pub parameters: Vec<u8>,
 }

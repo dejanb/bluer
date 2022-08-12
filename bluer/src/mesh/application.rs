@@ -11,7 +11,7 @@ use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
 
 use crate::mesh::{
     element::{Element, RegisteredElement},
-    PATH, SERVICE_NAME, TIMEOUT
+    PATH, SERVICE_NAME, TIMEOUT,
 };
 use futures::channel::oneshot;
 use std::{fmt, mem::take};

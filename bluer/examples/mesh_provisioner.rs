@@ -13,16 +13,14 @@
 use bluer::{
     mesh::{
         application::Application,
-        provisioner::{Provisioner, ProvisionerControlHandle},
         element::*,
+        provisioner::{Provisioner, ProvisionerControlHandle},
     },
     Uuid,
 };
+use btmesh_models::foundation::configuration::{ConfigurationClient, ConfigurationServer};
 use clap::Parser;
 use dbus::Path;
-use drogue_device::drivers::ble::mesh::model::foundation::configuration::{
-    ConfigurationClient, ConfigurationServer,
-};
 use futures::StreamExt;
 use std::{sync::Arc, time::Duration};
 use tokio::{signal, sync::mpsc, time::sleep};
@@ -63,7 +61,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
             control_handle: Some(element_handle),
         }],
-        provisioner: Some(Provisioner { control_handle: ProvisionerControlHandle { messages_tx: prov_tx }, start_address: 0xbd })
+        provisioner: Some(Provisioner {
+            control_handle: ProvisionerControlHandle { messages_tx: prov_tx },
+            start_address: 0xbd,
+        }),
     };
 
     let registered = mesh.application(root_path.clone(), sim).await?;

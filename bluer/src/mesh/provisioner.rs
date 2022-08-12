@@ -32,7 +32,11 @@ pub struct RegisteredProvisioner {
 
 impl RegisteredProvisioner {
     pub(crate) fn new(inner: Arc<SessionInner>, provisioner: Provisioner) -> Self {
-        Self { inner, provisioner: provisioner.clone(), next_address: Arc::new(Mutex::new(provisioner.start_address.clone())) }
+        Self {
+            inner,
+            provisioner: provisioner.clone(),
+            next_address: Arc::new(Mutex::new(provisioner.start_address.clone())),
+        }
     }
 
     fn proxy(&self) -> Proxy<'_, &SyncConnection> {
@@ -93,7 +97,7 @@ impl RegisteredProvisioner {
                                 let res = (0x000 as u16, *adr as u16);
                                 *adr += (count + 1) as i32;
                                 Ok(res)
-                            },
+                            }
                             None => Err(dbus::MethodErr::from(ReqError::Failed)),
                         }
                     })
