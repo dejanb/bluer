@@ -14,7 +14,7 @@ use bluer::{
     mesh::{
         application::Application,
         element::*,
-        provisioner::{Provisioner, ProvisionerControlHandle},
+        provisioner::{Provisioner, ProvisionerControlHandle, ProvisionerMessage},
     },
     Uuid,
 };
@@ -83,7 +83,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             evt = prov_stream.next() => {
                 match evt {
                     Some(msg) => {
-                        println!("msg {:?}", msg);
+                        match msg {
+                            ProvisionerMessage::AddNodeComplete(uuid, unicast, count) => {
+                                println!("Successfully added node {:?} to the address {:#04x} with {:?} elements", uuid, unicast, count);
+                                break;
+                            },
+                            ProvisionerMessage::AddNodeFailed(uuid, reason) => {
+                                println!("Failed to add node {:?}: '{:?}'", uuid, reason);
+                                break;
+                            }
+                        }
                     },
                     None => break,
                 }

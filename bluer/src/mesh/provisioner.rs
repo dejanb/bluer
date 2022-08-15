@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use dbus::nonblock::{Proxy, SyncConnection};
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
 use tokio::sync::mpsc;
+use uuid::Uuid;
 
 use crate::mesh::{PATH, SERVICE_NAME, TIMEOUT};
 
@@ -52,13 +53,13 @@ impl RegisteredProvisioner {
                 "AddNodeComplete",
                 ("uuid", "unicast", "count"),
                 (),
-                |ctx, cr, (_uuid, _unicast, _count): (Vec<u16>, u16, u8)| {
+                |ctx, cr, (uuid, unicast, count): (Vec<u8>, u16, u8)| {
                     method_call(ctx, cr, move |reg: Arc<RegisteredApplication>| async move {
                         if let Some(prov) = &reg.provisioner {
                             prov.provisioner
                                 .control_handle
                                 .messages_tx
-                                .send(ProvisionerMessage::AddNodeComplete)
+                                .send(ProvisionerMessage::AddNodeComplete(Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?, unicast, count))
                                 .await
                                 .map_err(|_| ReqError::Failed)?;
                         }
@@ -70,13 +71,13 @@ impl RegisteredProvisioner {
                 "AddNodeFailed",
                 ("uuid", "reason"),
                 (),
-                |ctx, cr, (_uuid, _reason): (Vec<u16>, String)| {
+                |ctx, cr, (uuid, reason): (Vec<u8>, String)| {
                     method_call(ctx, cr, move |reg: Arc<RegisteredApplication>| async move {
                         if let Some(prov) = &reg.provisioner {
                             prov.provisioner
                                 .control_handle
                                 .messages_tx
-                                .send(ProvisionerMessage::AddNodeFailed)
+                                .send(ProvisionerMessage::AddNodeFailed(Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?, reason))
                                 .await
                                 .map_err(|_| ReqError::Failed)?;
                         }
@@ -122,7 +123,8 @@ pub struct ProvisionerControlHandle {
 ///Messages sent by provisioner
 pub enum ProvisionerMessage {
     /// Add node succeded
-    AddNodeComplete,
+    AddNodeComplete(Uuid, u16, u8),
     /// Add node failed
-    AddNodeFailed,
+    AddNodeFailed(Uuid, String),
 }
+
