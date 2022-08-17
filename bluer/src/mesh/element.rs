@@ -7,7 +7,7 @@ use btmesh_common::{
     opcode::Opcode,
 };
 use dbus::{
-    arg::{RefArg, Variant},
+    arg::{ArgType, RefArg, Variant},
     nonblock::{Proxy, SyncConnection},
     Path,
 };
@@ -83,9 +83,18 @@ impl RegisteredElement {
 
                         let key = Aid::from(u8::try_from(key_index).unwrap_or_default());
                         let src: UnicastAddress = source.try_into().map_err(|_| ReqError::Failed)?;
-                        // TODO handle virtual addresses
                         let value = &destination.0;
-                        let dest = Address::parse(dbus::arg::cast::<u16>(value).unwrap().to_be_bytes());
+                        let dest = match value.arg_type() {
+                            ArgType::Array => {
+                                let args = dbus::arg::cast::<Vec<u8>>(value).unwrap();
+                                assert!(args.len() >= 2);
+                                Ok(Address::parse([args[0], args[1]]))
+                            }
+                            ArgType::UInt16 => {
+                                Ok(Address::parse(dbus::arg::cast::<u16>(value).unwrap().to_be_bytes()))
+                            }
+                            _ => Err(ReqError::Failed),
+                        }?;
 
                         let (opcode, parameters) = Opcode::split(&data[..]).unwrap();
                         let parameters = parameters.to_vec();
