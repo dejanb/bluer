@@ -28,10 +28,12 @@ pub(crate) type ElementConfig = HashMap<String, Variant<Box<dyn RefArg + 'static
 /// Interface to a Bluetooth mesh element interface.
 #[derive(Debug, Clone)]
 pub struct Element {
-    /// Element models
-    pub models: Vec<Arc<dyn Model + 'static>>,
     /// Element d-bus path
     pub path: Path<'static>,
+    /// Element location
+    pub location: Option<u16>,
+    /// Element models
+    pub models: Vec<Arc<dyn Model + 'static>>,
     /// Control handle for element once it has been registered.
     pub control_handle: Option<ElementControlHandle>,
 }
@@ -131,6 +133,9 @@ impl RegisteredElement {
                     }
                 }
                 Some(mt)
+            });
+            cr_property!(ib, "Location", reg => {
+                reg.element.location
             });
         })
     }

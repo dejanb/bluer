@@ -27,6 +27,7 @@ use tokio::{signal, time::sleep};
 struct Args {
     #[clap(short, long)]
     token: String,
+
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -47,6 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         path: app_path,
         elements: vec![Element {
             path: element_path,
+            location: None,
             models: vec![Arc::new(FromDrogue::new(SensorClient::<SensorModel, 1, 1>::new()))],
             control_handle: Some(element_handle),
         }],

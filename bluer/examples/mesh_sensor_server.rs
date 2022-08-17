@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         path: app_path,
         elements: vec![Element {
             path: element_path.clone(),
+            location: None,
             models: vec![Arc::new(FromDrogue::new(BoardSensor::new()))],
             control_handle: Some(element_handle),
         }],

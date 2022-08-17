@@ -55,6 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         path: app_path,
         elements: vec![Element {
             path: element_path,
+            location: None,
             models: vec![
                 Arc::new(FromDrogue::new(ConfigurationServer::default())),
                 Arc::new(FromDrogue::new(ConfigurationClient::default())),
