@@ -54,7 +54,8 @@ impl ProvisionAgent {
             });
             cr_property!(ib, "Capabilities", _reg => {
                 // TODO configure capabilities
-                let mt: Vec<String> = vec!["out-numeric".into(), "static-oob".into()];
+                //let mt: Vec<String> = vec!["out-numeric".into(), "static-oob".into()];
+                let mt: Vec<String> = vec![];
                 Some(mt)
             });
         })

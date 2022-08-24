@@ -1,6 +1,6 @@
 //! Implement Application bluetooth mesh interface
 
-use crate::{method_call, Result, SessionInner};
+use crate::{mesh::ReqError, method_call, Result, SessionInner};
 use std::sync::Arc;
 
 use dbus::{
@@ -8,6 +8,7 @@ use dbus::{
     Path,
 };
 use dbus_crossroads::{Crossroads, IfaceBuilder, IfaceToken};
+use tokio::sync::mpsc::Sender;
 
 use crate::mesh::{
     element::{Element, RegisteredElement},
@@ -24,7 +25,7 @@ use super::{
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Application1";
 
 /// Definition of mesh application.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Application {
     /// Application path
     pub path: Path<'static>,
@@ -32,6 +33,8 @@ pub struct Application {
     pub elements: Vec<Element>,
     /// Provisioner
     pub provisioner: Option<Provisioner>,
+    /// Application events sender
+    pub events_tx: Sender<ApplicationMessage>,
 }
 
 // ---------------
@@ -68,15 +71,23 @@ impl RegisteredApplication {
 
     pub(crate) fn register_interface(cr: &mut Crossroads) -> IfaceToken<Arc<Self>> {
         cr.register(INTERFACE, |ib: &mut IfaceBuilder<Arc<Self>>| {
-            ib.method_with_cr_async("JoinComplete", ("token",), (), |ctx, cr, (_token,): (u64,)| {
-                method_call(ctx, cr, move |_reg: Arc<Self>| async move {
-                    println!("JoinComplete");
+            ib.method_with_cr_async("JoinComplete", ("token",), (), |ctx, cr, (token,): (u64,)| {
+                method_call(ctx, cr, move |reg: Arc<Self>| async move {
+                    reg.app
+                        .events_tx
+                        .send(ApplicationMessage::JoinComplete(token))
+                        .await
+                        .map_err(|_| ReqError::Failed)?;
                     Ok(())
                 })
             });
-            ib.method_with_cr_async("JoinFailed", ("reason",), (), |ctx, cr, (_reason,): (String,)| {
-                method_call(ctx, cr, move |_reg: Arc<Self>| async move {
-                    println!("JoinFailed");
+            ib.method_with_cr_async("JoinFailed", ("reason",), (), |ctx, cr, (reason,): (String,)| {
+                method_call(ctx, cr, move |reg: Arc<Self>| async move {
+                    reg.app
+                        .events_tx
+                        .send(ApplicationMessage::JoinFailed(reason))
+                        .await
+                        .map_err(|_| ReqError::Failed)?;
                     Ok(())
                 })
             });
@@ -157,4 +168,13 @@ impl fmt::Debug for ApplicationHandle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ApplicationHandle {{ {} }}", &self.name)
     }
+}
+
+#[derive(Clone, Debug)]
+///Messages sent by provisioner
+pub enum ApplicationMessage {
+    /// Join node succeded
+    JoinComplete(u64),
+    /// Join node failed
+    JoinFailed(String),
 }

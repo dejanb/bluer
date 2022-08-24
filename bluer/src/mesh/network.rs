@@ -42,11 +42,8 @@ impl Network {
     }
 
     /// Join mesh network
-    pub async fn join(&self, path: &str, uuid: Uuid) -> Result<()> {
-        let path_value =
-            Path::new(path).map_err(|_| Error::new(ErrorKind::Internal(InternalErrorKind::InvalidValue)))?;
-
-        self.call_method("Join", (path_value, uuid.as_bytes().to_vec())).await
+    pub async fn join(&self, path: Path<'_>, uuid: Uuid) -> Result<()> {
+        self.call_method("Join", (path, uuid.as_bytes().to_vec())).await
     }
 
     /// Attach to mesh network

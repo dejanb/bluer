@@ -10,7 +10,11 @@
 //! Example receive
 //! [bluer/bluer-tools]$ RUST_LOG=TRACE cargo run --example mesh_sensor_client -- --token 7eb48c91911361da
 
-use bluer::mesh::{application::Application, element::*};
+use bluer::mesh::{
+    application::{Application, ApplicationMessage},
+    element::*,
+    node::Node,
+};
 use btmesh_common::{opcode::Opcode, CompanyIdentifier, ParseError};
 use btmesh_models::{
     sensor::{PropertyId, SensorConfig, SensorData, SensorDescriptor, SensorMessage, SensorServer, SensorStatus},
@@ -18,18 +22,21 @@ use btmesh_models::{
 };
 use clap::Parser;
 use dbus::Path;
+use futures::StreamExt;
 use std::sync::Arc;
 use tokio::{
     signal,
     sync::mpsc,
     time::{self, sleep, Duration},
 };
+use tokio_stream::wrappers::ReceiverStream;
+use uuid::Uuid;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     #[clap(short, long)]
-    token: String,
+    token: Option<String>,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -41,6 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mesh = session.mesh().await?;
 
     let (_element_control, element_handle) = element_control();
+    let (app_tx, app_rx) = mpsc::channel(1);
 
     let root_path = Path::from("/mesh_server");
     let app_path = Path::from(format!("{}/{}", root_path.clone(), "application"));
@@ -54,12 +62,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             models: vec![Arc::new(FromDrogue::new(BoardSensor::new()))],
             control_handle: Some(element_handle),
         }],
-        ..Default::default()
+        events_tx: app_tx,
+        provisioner: None,
     };
 
     let registered = mesh.application(root_path.clone(), sim.clone()).await?;
 
-    let node = mesh.attach(root_path.clone(), &args.token).await?;
+    let mut node: Option<Node> = None;
+
+    match args.token {
+        Some(token) => {
+            println!("Attaching with token {}", token);
+            node = Some(mesh.attach(root_path.clone(), &token).await?);
+        }
+        None => {
+            let device_id = Uuid::new_v4();
+            println!("Joining device: {}", device_id.as_simple());
+
+            mesh.join(root_path.clone(), device_id).await?;
+        }
+    }
 
     println!("{:?}", sim.path);
 
@@ -67,6 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (messages_tx, mut messages_rx) = mpsc::channel(10);
     let lines_messages_tx = messages_tx.clone();
+    let mut app_stream = ReceiverStream::new(app_rx);
+
     tokio::spawn(async move {
         let mut interval = time::interval(Duration::from_secs(16));
 
@@ -88,8 +112,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break
             },
             Some(message) = messages_rx.recv() => {
-                node.publish::<BoardSensor>(message, element_path.clone()).await?;
+                if let Some(ref n) = node {
+                    n.publish::<BoardSensor>(message, element_path.clone()).await?;
+                }
             },
+            app_evt = app_stream.next() => {
+                match app_evt {
+                    Some(msg) => {
+                        match msg {
+                            ApplicationMessage::JoinComplete(token) => {
+                                println!("Joined with token {:016x}", token);
+                                println!("Attaching");
+                                node = Some(mesh.attach(root_path.clone(), &format!("{:016x}", token)).await?);
+                            },
+                            ApplicationMessage::JoinFailed(reason) => {
+                                println!("Failed to join: {}", reason);
+                                break;
+                            },
+                        }
+                    },
+                    None => break,
+                }
+            }
         }
     }
 

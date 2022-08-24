@@ -59,7 +59,11 @@ impl RegisteredProvisioner {
                             prov.provisioner
                                 .control_handle
                                 .messages_tx
-                                .send(ProvisionerMessage::AddNodeComplete(Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?, unicast, count))
+                                .send(ProvisionerMessage::AddNodeComplete(
+                                    Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?,
+                                    unicast,
+                                    count,
+                                ))
                                 .await
                                 .map_err(|_| ReqError::Failed)?;
                         }
@@ -77,7 +81,10 @@ impl RegisteredProvisioner {
                             prov.provisioner
                                 .control_handle
                                 .messages_tx
-                                .send(ProvisionerMessage::AddNodeFailed(Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?, reason))
+                                .send(ProvisionerMessage::AddNodeFailed(
+                                    Uuid::from_slice(&uuid).map_err(|_| ReqError::Failed)?,
+                                    reason,
+                                ))
                                 .await
                                 .map_err(|_| ReqError::Failed)?;
                         }
@@ -127,4 +134,3 @@ pub enum ProvisionerMessage {
     /// Add node failed
     AddNodeFailed(Uuid, String),
 }
-

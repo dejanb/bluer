@@ -44,6 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mesh = session.mesh().await?;
 
     let (_, element_handle) = element_control();
+    let (app_tx, _app_rx) = mpsc::channel(1);
 
     let root_path = Path::from("/mesh/cfgclient");
     let app_path = Path::from(format!("{}/{}", root_path.clone(), "application"));
@@ -66,6 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             control_handle: ProvisionerControlHandle { messages_tx: prov_tx },
             start_address: 0xbd,
         }),
+        events_tx: app_tx,
     };
 
     let registered = mesh.application(root_path.clone(), sim).await?;
