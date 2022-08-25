@@ -114,6 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Some(message) = messages_rx.recv() => {
                 if let Some(ref n) = node {
                     n.publish::<BoardSensor>(message, element_path.clone()).await?;
+                    //n.send::<BoardSensor>(message, element_path.clone(), 0xc002 as u16, 0 as u16).await?;
                 }
             },
             app_evt = app_stream.next() => {

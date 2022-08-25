@@ -51,6 +51,19 @@ impl Node {
         Ok(())
     }
 
+    /// Send a publication originated by a local model.
+    pub async fn send<'m, M: Model>(&self, message: M::Message, path: Path<'m>, destination: u16, app_key: u16) -> Result<()> {
+        let mut data: heapless::Vec<u8, 384> = heapless::Vec::new();
+        message.opcode().emit(&mut data).map_err(|_| Error::new(ErrorKind::Failed))?;
+        message.emit_parameters(&mut data).map_err(|_| Error::new(ErrorKind::Failed))?;
+
+        let options: HashMap<&'static str, Variant<Box<dyn RefArg>>> = HashMap::new();
+
+        log::trace!("Sending message: {:?} {:?} {:?} {:?} {:?}", path, destination, app_key, options, data.to_vec());
+        self.call_method("Send", (path, destination, app_key, options, data.to_vec())).await?;
+        Ok(())
+    }
+
     fn proxy(&self) -> Proxy<'_, &SyncConnection> {
         Proxy::new(SERVICE_NAME, self.path.clone(), TIMEOUT, &*self.inner.connection)
     }
