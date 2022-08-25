@@ -99,8 +99,10 @@ impl RegisteredElement {
                         let (opcode, parameters) = Opcode::split(&data[..]).unwrap();
                         let parameters = parameters.to_vec();
 
+                        let index = reg.index;
+                        let location: Option<u16> = reg.element.location;
                         let msg = ElementMessage {
-                            key, src, dest, opcode, parameters
+                            index, location, key, src, dest, opcode, parameters
                         };
 
                         match &reg.element.control_handle {
@@ -217,8 +219,12 @@ pub fn element_control() -> (ElementControl, ElementControlHandle) {
 }
 
 /// Element message received from dbus
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ElementMessage {
+    /// Index
+    pub index: u8,
+    /// Location
+    pub location: Option<u16>,
     /// Application key
     pub key: Aid,
     /// Message source
