@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sim = Application {
         path: app_path,
         elements: vec![Element {
-            path: element_path,
+            path: element_path.clone(),
             location: None,
             models: vec![
                 Arc::new(FromDrogue::new(ConfigurationServer::default())),
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let node = mesh.attach(root_path.clone(), &args.token).await?;
 
-    if let Some(management) = node.management {
+    if let Some(management) = node.clone().management {
         management.add_node(Uuid::parse_str(&args.uuid)?).await?;
     }
 
@@ -89,6 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match msg {
                             ProvisionerMessage::AddNodeComplete(uuid, unicast, count) => {
                                 println!("Successfully added node {:?} to the address {:#04x} with {:?} elements", uuid, unicast, count);
+                                sleep(Duration::from_secs(1)).await;
+                                node.add_app_key(element_path.clone(), unicast, 0, 0, false).await?;
                                 break;
                             },
                             ProvisionerMessage::AddNodeFailed(uuid, reason) => {

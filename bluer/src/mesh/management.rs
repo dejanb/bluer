@@ -15,6 +15,7 @@ use crate::mesh::{SERVICE_NAME, TIMEOUT};
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Management1";
 
 /// Interface to a Bluetooth mesh node.
+#[derive(Clone)]
 pub struct Management {
     inner: Arc<SessionInner>,
     path: Path<'static>,

@@ -86,17 +86,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             evt = element_control.next() => {
                 match evt {
                     Some(msg) => {
-                        match SensorClient::<SensorModel, 1, 1>::parse(msg.opcode, &msg.parameters).map_err(|_| std::fmt::Error)? {
-                            Some(message) => {
-                                match message {
-                                    SensorMessage::Status(status) => {
-                                        println!("Received {:?}", status.data);
-                                    },
-                                    _ => todo!(),
-                                }
-                            },
-                            None => todo!()
+                        match msg {
+                            ElementMessage::Received(received) => {
+                                match SensorClient::<SensorModel, 1, 1>::parse(received.opcode, &received.parameters).map_err(|_| std::fmt::Error)? {
+                                    Some(message) => {
+                                        match message {
+                                            SensorMessage::Status(status) => {
+                                            println!("Received {:?}", status.data);
+                                        },
+                                        _ => todo!(),
+                                    }
+                                },
+                                None => todo!()
+                            }
+                        },
+                        ElementMessage::DevKey(_) => {
+                            todo!()
                         }
+                    }
                     },
                     None => break,
                 }

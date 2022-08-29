@@ -19,6 +19,7 @@ use btmesh_models::{Message, Model};
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Node1";
 
 /// Interface to a Bluetooth mesh node.
+#[derive(Clone)]
 pub struct Node {
     inner: Arc<SessionInner>,
     path: Path<'static>,
@@ -70,6 +71,38 @@ impl Node {
             data.to_vec()
         );
         self.call_method("Send", (path, destination, app_key, options, data.to_vec())).await?;
+        Ok(())
+    }
+
+    /// Send a message originated by a local model encoded with the device key of the remote node.
+    pub async fn dev_key_send<'m, M: Model>(
+        &self, message: M::Message, path: Path<'m>, destination: u16, remote: bool, app_key: u16,
+    ) -> Result<()> {
+        let mut data: heapless::Vec<u8, 384> = heapless::Vec::new();
+        message.opcode().emit(&mut data).map_err(|_| Error::new(ErrorKind::Failed))?;
+        message.emit_parameters(&mut data).map_err(|_| Error::new(ErrorKind::Failed))?;
+
+        let options: HashMap<&'static str, Variant<Box<dyn RefArg>>> = HashMap::new();
+
+        log::trace!(
+            "Sending device key encoded message: {:?} {:?} {:?} {:?} {:?} {:?}",
+            path,
+            destination,
+            remote,
+            app_key,
+            options,
+            data.to_vec()
+        );
+        self.call_method("DevKeySend", (path, destination, remote, app_key, options, data.to_vec())).await?;
+        Ok(())
+    }
+
+    /// send add or update network key originated by the local configuration client to a remote configuration server.
+    pub async fn add_app_key<'m>(
+        &self, path: Path<'m>, destination: u16, app_key: u16, net_key: u16, update: bool,
+    ) -> Result<()> {
+        log::trace!("Adding app key: {:?} {:?} {:?} {:?} {:?}", path, destination, app_key, net_key, update);
+        self.call_method("AddAppKey", (path, destination, app_key, net_key, update)).await?;
         Ok(())
     }
 

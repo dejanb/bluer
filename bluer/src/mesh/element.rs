@@ -98,10 +98,9 @@ impl RegisteredElement {
 
                         let (opcode, parameters) = Opcode::split(&data[..]).unwrap();
                         let parameters = parameters.to_vec();
-
                         let index = reg.index;
                         let location: Option<u16> = reg.element.location;
-                        let msg = ElementMessage {
+                        let msg = ReceivedMessage {
                             index, location, key, src, dest, opcode, parameters
                         };
 
@@ -109,7 +108,51 @@ impl RegisteredElement {
                             Some(handler) => {
                                 handler
                                 .messages_tx
-                                .send(msg)
+                                .send(ElementMessage::Received(msg))
+                                .await
+                                .map_err(|_| ReqError::Failed)?;
+                            }
+                            None => ()
+                        }
+
+                        Ok(())
+                    })
+                },
+            );
+            ib.method_with_cr_async(
+                "DevKeyMessageReceived",
+                ("source", "remote", "key_index", "data"),
+                (),
+                |ctx,
+                 cr,
+                 (source, remote, key_index, data): (
+                    u16,
+                    bool,
+                    u16,
+                    Vec<u8>,
+                )| {
+                    method_call(ctx, cr, move |reg: Arc<Self>| async move {
+                        log::trace!(
+                            "Dev Key Message received for element {:?}: (source: {:?}, key_index: {:?}, remote: {:?}, data: {:?})",
+                            reg.index,
+                            source,
+                            key_index,
+                            remote,
+                            data
+                        );
+
+                        let (opcode, parameters) = Opcode::split(&data[..]).unwrap();
+                        let parameters = parameters.to_vec();
+
+                        let msg = DevKeyMessage {
+                            opcode, parameters
+                        };
+
+                        match &reg.element.control_handle {
+                            Some(handler) => {
+                                handler
+                                .messages_tx
+                                .send(ElementMessage::DevKey(msg))
                                 .await
                                 .map_err(|_| ReqError::Failed)?;
                             }
@@ -218,9 +261,18 @@ pub fn element_control() -> (ElementControl, ElementControlHandle) {
     )
 }
 
+#[derive(Clone, Debug)]
+///Messages sent by the element.
+pub enum ElementMessage {
+    /// Received Message
+    Received(ReceivedMessage),
+    /// DevKey Message
+    DevKey(DevKeyMessage),
+}
+
 /// Element message received from dbus
-#[derive(Clone)]
-pub struct ElementMessage {
+#[derive(Clone, Debug)]
+pub struct ReceivedMessage {
     /// Index
     pub index: u8,
     /// Location
@@ -231,6 +283,15 @@ pub struct ElementMessage {
     pub src: UnicastAddress,
     /// Message destination
     pub dest: Address,
+    /// Message opcode
+    pub opcode: Opcode,
+    /// Message data
+    pub parameters: Vec<u8>,
+}
+
+/// DevKey message
+#[derive(Clone, Debug)]
+pub struct DevKeyMessage {
     /// Message opcode
     pub opcode: Opcode,
     /// Message data

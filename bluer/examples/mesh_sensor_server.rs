@@ -26,7 +26,7 @@ use futures::StreamExt;
 use std::sync::Arc;
 use tokio::{
     signal,
-    sync::mpsc,
+    sync::{mpsc, mpsc::Sender},
     time::{self, sleep, Duration},
 };
 use tokio_stream::wrappers::ReceiverStream;
@@ -69,11 +69,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let registered = mesh.application(root_path.clone(), sim.clone()).await?;
 
     let mut node: Option<Node> = None;
+    let (messages_tx, mut messages_rx) = mpsc::channel(10);
+    //let lines_messages_tx = messages_tx.clone();
+    let mut app_stream = ReceiverStream::new(app_rx);
+    //pin_mut!(element_control);
 
     match args.token {
         Some(token) => {
             println!("Attaching with token {}", token);
             node = Some(mesh.attach(root_path.clone(), &token).await?);
+            start_sending(messages_tx.clone());
         }
         None => {
             let device_id = Uuid::new_v4();
@@ -83,28 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("{:?}", sim.path);
-
     println!("Sensor server ready. Press enter to send a message. Press Ctrl+C to quit");
-
-    let (messages_tx, mut messages_rx) = mpsc::channel(10);
-    let lines_messages_tx = messages_tx.clone();
-    let mut app_stream = ReceiverStream::new(app_rx);
-
-    tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(16));
-
-        loop {
-            interval.tick().await;
-            _ = messages_tx.send(generate_message()).await;
-        }
-    });
-
-    std::thread::spawn(move || loop {
-        let mut line = String::new();
-        std::io::stdin().read_line(&mut line).unwrap();
-        _ = lines_messages_tx.blocking_send(generate_message());
-    });
 
     loop {
         tokio::select! {
@@ -113,8 +97,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             Some(message) = messages_rx.recv() => {
                 if let Some(ref n) = node {
-                    n.publish::<BoardSensor>(message, element_path.clone()).await?;
-                    //n.send::<BoardSensor>(message, element_path.clone(), 0xc002 as u16, 0 as u16).await?;
+                    //n.publish::<BoardSensor>(message, element_path.clone()).await?;
+                    n.send::<BoardSensorMessage>(message, element_path.clone(), 0x00bc as u16, 0 as u16).await?;
                 }
             },
             app_evt = app_stream.next() => {
@@ -123,8 +107,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match msg {
                             ApplicationMessage::JoinComplete(token) => {
                                 println!("Joined with token {:016x}", token);
+                                // wait a bit for configuration to take effect
+                                sleep(Duration::from_secs(1)).await;
                                 println!("Attaching");
                                 node = Some(mesh.attach(root_path.clone(), &format!("{:016x}", token)).await?);
+                                start_sending(messages_tx.clone());
                             },
                             ApplicationMessage::JoinFailed(reason) => {
                                 println!("Failed to join: {}", reason);
@@ -143,6 +130,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sleep(Duration::from_secs(1)).await;
 
     Ok(())
+}
+
+fn start_sending(sender: Sender<BoardSensorMessage>) -> () {
+    println!("Starting to send messages!");
+
+    let lines_sender = sender.clone();
+
+    tokio::spawn(async move {
+        let mut interval = time::interval(Duration::from_secs(16));
+
+        loop {
+            interval.tick().await;
+            _ = sender.send(generate_message()).await;
+        }
+    });
+
+    std::thread::spawn(move || loop {
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        _ = lines_sender.clone().blocking_send(generate_message());
+    });
 }
 
 fn generate_message() -> BoardSensorMessage {
