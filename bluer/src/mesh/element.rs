@@ -121,11 +121,11 @@ impl RegisteredElement {
             );
             ib.method_with_cr_async(
                 "DevKeyMessageReceived",
-                ("source", "remote", "key_index", "data"),
+                ("source", "remote", "net_index", "data"),
                 (),
                 |ctx,
                  cr,
-                 (source, remote, key_index, data): (
+                 (source, remote, net_index, data): (
                     u16,
                     bool,
                     u16,
@@ -133,10 +133,10 @@ impl RegisteredElement {
                 )| {
                     method_call(ctx, cr, move |reg: Arc<Self>| async move {
                         log::trace!(
-                            "Dev Key Message received for element {:?}: (source: {:?}, key_index: {:?}, remote: {:?}, data: {:?})",
+                            "Dev Key Message received for element {:?}: (source: {:?}, net_index: {:?}, remote: {:?}, data: {:?})",
                             reg.index,
                             source,
-                            key_index,
+                            net_index,
                             remote,
                             data
                         );

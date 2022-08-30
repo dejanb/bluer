@@ -70,9 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut node: Option<Node> = None;
     let (messages_tx, mut messages_rx) = mpsc::channel(10);
-    //let lines_messages_tx = messages_tx.clone();
     let mut app_stream = ReceiverStream::new(app_rx);
-    //pin_mut!(element_control);
 
     match args.token {
         Some(token) => {
@@ -107,8 +105,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match msg {
                             ApplicationMessage::JoinComplete(token) => {
                                 println!("Joined with token {:016x}", token);
-                                // wait a bit for configuration to take effect
-                                sleep(Duration::from_secs(1)).await;
+                                //wait a bit for configuration to take effect
+                                sleep(Duration::from_secs(5)).await;
                                 println!("Attaching");
                                 node = Some(mesh.attach(root_path.clone(), &format!("{:016x}", token)).await?);
                                 start_sending(messages_tx.clone());
