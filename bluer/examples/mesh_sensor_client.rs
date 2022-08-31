@@ -88,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Some(msg) => {
                         match msg {
                             ElementMessage::Received(received) => {
-                                match SensorClient::<SensorModel, 1, 1>::parse(received.opcode, &received.parameters).map_err(|_| std::fmt::Error)? {
+                                match SensorClient::<SensorModel, 1, 1>::parse(&received.opcode, &received.parameters).map_err(|_| std::fmt::Error)? {
                                     Some(message) => {
                                         match message {
                                             SensorMessage::Status(status) => {
@@ -175,7 +175,7 @@ impl Model for VendorModel {
     const IDENTIFIER: ModelIdentifier = COMPANY_MODEL;
     type Message = VendorMessage;
 
-    fn parse(_opcode: Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
+    fn parse(_opcode: &Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
         unimplemented!();
     }
 }

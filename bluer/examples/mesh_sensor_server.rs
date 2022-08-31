@@ -199,7 +199,7 @@ impl Model for VendorModel {
     const IDENTIFIER: ModelIdentifier = COMPANY_MODEL;
     type Message = VendorMessage;
 
-    fn parse(_opcode: Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
+    fn parse(_opcode: &Opcode, _parameters: &[u8]) -> Result<Option<Self::Message>, ParseError> {
         unimplemented!();
     }
 }

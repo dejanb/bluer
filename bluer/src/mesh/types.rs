@@ -87,7 +87,7 @@ where
     where
         Self: 'm,
     {
-        let m = M::parse(opcode, parameters)?;
+        let m = M::parse(&opcode, parameters)?;
         if let Some(m) = m {
             let b: Box<dyn Message + 'm> = Box::new(ModelMessage { m });
             Ok(Some(b))

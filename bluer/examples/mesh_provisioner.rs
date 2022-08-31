@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             },
                             ElementMessage::DevKey(received) => {
                                 println!("Received dev key message: {:?}", received);
-                                match ConfigurationServer::parse(received.opcode, &received.parameters).map_err(|_| std::fmt::Error)? {
+                                match ConfigurationServer::parse(&received.opcode, &received.parameters).map_err(|_| std::fmt::Error)? {
                                     Some(message) => {
                                         match message {
                                             ConfigurationMessage::AppKey(key) => {
