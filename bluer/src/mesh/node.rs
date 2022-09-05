@@ -24,12 +24,12 @@ pub struct Node {
     inner: Arc<SessionInner>,
     path: Path<'static>,
     /// Management interface for the node
-    pub management: Option<Management>,
+    pub management: Management,
 }
 
 impl Node {
     pub(crate) async fn new(path: Path<'static>, inner: Arc<SessionInner>) -> Result<Self> {
-        let management = Some(Management::new(path.clone(), inner.clone()).await?);
+        let management = Management::new(path.clone(), inner.clone()).await?;
         Ok(Self { inner, path, management })
     }
 

@@ -79,9 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let node = mesh.attach(root_path.clone(), &args.token).await?;
 
-    if let Some(management) = node.clone().management {
-        management.add_node(Uuid::parse_str(&args.uuid)?).await?;
-    }
+    node.management.add_node(Uuid::parse_str(&args.uuid)?).await?;
 
     let mut prov_stream = ReceiverStream::new(prov_rx);
     pin_mut!(element_control);
