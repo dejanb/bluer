@@ -1,6 +1,6 @@
 //! Implements Node bluetooth mesh interface
 
-use crate::{Result, SessionInner};
+use crate::{InvalidAddress, Result, SessionInner};
 use std::{collections::HashMap, sync::Arc};
 
 use btmesh_common::ModelIdentifier;
@@ -14,7 +14,13 @@ use crate::{
     mesh::{management::Management, SERVICE_NAME, TIMEOUT},
     Error, ErrorKind,
 };
-use btmesh_models::{Message, Model};
+use btmesh_models::{
+    foundation::configuration::{
+        model_app::{ModelAppMessage, ModelAppPayload},
+        AppKeyIndex, ConfigurationMessage, ConfigurationServer,
+    },
+    Message, Model,
+};
 
 pub(crate) const INTERFACE: &str = "org.bluez.mesh.Node1";
 
@@ -97,12 +103,27 @@ impl Node {
         Ok(())
     }
 
-    /// send add or update network key originated by the local configuration client to a remote configuration server.
+    /// Send add or update network key originated by the local configuration client to a remote configuration server.
     pub async fn add_app_key<'m>(
         &self, path: Path<'m>, destination: u16, app_key: u16, net_key: u16, update: bool,
     ) -> Result<()> {
         log::trace!("Adding app key: {:?} {:?} {:?} {:?} {:?}", path, destination, app_key, net_key, update);
         self.call_method("AddAppKey", (path, destination, app_key, net_key, update)).await?;
+        Ok(())
+    }
+
+    /// Binds application key to the model.
+    pub async fn bind<'m>(
+        &self, element_path: Path<'m>, address: u16, app_key: u16, model: ModelIdentifier,
+    ) -> Result<()> {
+        let payload = ModelAppPayload {
+            element_address: address.try_into().map_err(|_| InvalidAddress(address.to_string()))?,
+            app_key_index: AppKeyIndex::new(app_key),
+            model_identifier: model,
+        };
+
+        let message = ConfigurationMessage::from(ModelAppMessage::Bind(payload));
+        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
 
