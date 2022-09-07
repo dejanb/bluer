@@ -17,6 +17,9 @@ use crate::{
 use btmesh_models::{
     foundation::configuration::{
         model_app::{ModelAppMessage, ModelAppPayload},
+        model_publication::{
+            ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress,
+        },
         AppKeyIndex, ConfigurationMessage, ConfigurationServer,
     },
     Message, Model,
@@ -123,6 +126,31 @@ impl Node {
         };
 
         let message = ConfigurationMessage::from(ModelAppMessage::Bind(payload));
+        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
+        Ok(())
+    }
+
+    /// Sets publication to the model.
+    pub async fn pub_set<'m>(
+        &self, element_path: Path<'m>, address: u16, pub_address: PublishAddress, app_key: u16,
+        publish_period: u8, retransmit: u8, model: ModelIdentifier,
+    ) -> Result<()> {
+        // TODO handle period and retransmits better
+        let details = PublicationDetails {
+            element_address: address.try_into().map_err(|_| InvalidAddress(address.to_string()))?,
+            publish_address: pub_address,
+            app_key_index: AppKeyIndex::new(app_key),
+            credential_flag: true,
+            publish_ttl: None,
+            publish_period: publish_period,
+            publish_retransmit_count: retransmit,
+            publish_retransmit_interval_steps: retransmit,
+            model_identifier: model
+        };
+
+        let set = ModelPublicationSetMessage { details };
+
+        let message = ConfigurationMessage::from(ModelPublicationMessage::VirtualAddressSet(set));
         self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
