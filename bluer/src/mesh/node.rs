@@ -140,7 +140,7 @@ impl Node {
             element_address: address.try_into().map_err(|_| InvalidAddress(address.to_string()))?,
             publish_address: pub_address,
             app_key_index: AppKeyIndex::new(app_key),
-            credential_flag: true,
+            credential_flag: false,
             publish_ttl: None,
             publish_period: publish_period,
             publish_retransmit_count: retransmit,
