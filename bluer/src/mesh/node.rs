@@ -20,6 +20,7 @@ use btmesh_models::{
         model_publication::{
             ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress,
         },
+        node_reset::NodeResetMessage,
         AppKeyIndex, ConfigurationMessage, ConfigurationServer,
     },
     Message, Model,
@@ -130,6 +131,13 @@ impl Node {
         Ok(())
     }
 
+    /// Reset a node.
+    pub async fn reset<'m>(&self, element_path: Path<'m>, address: u16) -> Result<()> {
+        let message = ConfigurationMessage::from(NodeResetMessage::Reset);
+        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
+        Ok(())
+    }
+
     /// Sets publication to the model.
     pub async fn pub_set<'m>(
         &self, element_path: Path<'m>, address: u16, pub_address: PublishAddress, app_key: u16,
@@ -145,7 +153,7 @@ impl Node {
             publish_period: publish_period,
             publish_retransmit_count: retransmit,
             publish_retransmit_interval_steps: retransmit,
-            model_identifier: model
+            model_identifier: model,
         };
 
         let set = ModelPublicationSetMessage { details };
