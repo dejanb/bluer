@@ -18,7 +18,7 @@ use btmesh_models::{
     foundation::configuration::{
         model_app::{ModelAppMessage, ModelAppPayload},
         model_publication::{
-            ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress,
+            ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress, PublishPeriod, PublishRetransmit,
         },
         node_reset::NodeResetMessage,
         AppKeyIndex, ConfigurationMessage, ConfigurationServer,
@@ -141,7 +141,7 @@ impl Node {
     /// Sets publication to the model.
     pub async fn pub_set<'m>(
         &self, element_path: Path<'m>, address: u16, pub_address: PublishAddress, app_key: u16,
-        publish_period: u8, retransmit: u8, model: ModelIdentifier,
+        publish_period: PublishPeriod, rxt: PublishRetransmit, model: ModelIdentifier,
     ) -> Result<()> {
         // TODO handle period and retransmits better
         let details = PublicationDetails {
@@ -151,9 +151,8 @@ impl Node {
             credential_flag: false,
             publish_ttl: None,
             publish_period: publish_period,
-            publish_retransmit_count: retransmit,
-            publish_retransmit_interval_steps: retransmit,
-            model_identifier: model,
+            publish_retransmit: rxt,
+            model_identifier: model
         };
 
         let set = ModelPublicationSetMessage { details };
