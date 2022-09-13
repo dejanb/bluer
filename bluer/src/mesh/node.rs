@@ -18,10 +18,11 @@ use btmesh_models::{
     foundation::configuration::{
         model_app::{ModelAppMessage, ModelAppPayload},
         model_publication::{
-            ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress, PublishPeriod, PublishRetransmit,
+            ModelPublicationMessage, ModelPublicationSetMessage, PublicationDetails, PublishAddress,
+            PublishPeriod, PublishRetransmit,
         },
         node_reset::NodeResetMessage,
-        AppKeyIndex, ConfigurationMessage, ConfigurationServer,
+        AppKeyIndex, ConfigurationMessage,
     },
     Message, Model,
 };
@@ -85,8 +86,8 @@ impl Node {
     }
 
     /// Send a message originated by a local model encoded with the device key of the remote node.
-    pub async fn dev_key_send<'m, M: Model>(
-        &self, message: M::Message, path: Path<'m>, destination: u16, remote: bool, app_key: u16,
+    pub async fn dev_key_send<'m, M: Message>(
+        &self, message: M, path: Path<'m>, destination: u16, remote: bool, app_key: u16,
     ) -> Result<()> {
         let mut data: heapless::Vec<u8, 384> = heapless::Vec::new();
         message.opcode().emit(&mut data).map_err(|_| Error::new(ErrorKind::Failed))?;
@@ -127,14 +128,14 @@ impl Node {
         };
 
         let message = ConfigurationMessage::from(ModelAppMessage::Bind(payload));
-        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
+        self.dev_key_send(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
 
     /// Reset a node.
     pub async fn reset<'m>(&self, element_path: Path<'m>, address: u16) -> Result<()> {
         let message = ConfigurationMessage::from(NodeResetMessage::Reset);
-        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
+        self.dev_key_send(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
 
@@ -152,13 +153,13 @@ impl Node {
             publish_ttl: None,
             publish_period: publish_period,
             publish_retransmit: rxt,
-            model_identifier: model
+            model_identifier: model,
         };
 
         let set = ModelPublicationSetMessage { details };
 
         let message = ConfigurationMessage::from(ModelPublicationMessage::VirtualAddressSet(set));
-        self.dev_key_send::<ConfigurationServer>(message, element_path.clone(), address, true, 0 as u16).await?;
+        self.dev_key_send(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
 
