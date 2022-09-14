@@ -252,9 +252,9 @@ impl fmt::Debug for ElementControlHandle {
 /// Creates a [ElementControl] and its associated [ElementControlHandle].
 ///
 /// Keep the [ElementControl] and store the [ElementControlHandle] in [Element::control_handle].
-pub fn element_control() -> (ElementControl, ElementControlHandle) {
+pub fn element_control(size: usize) -> (ElementControl, ElementControlHandle) {
     let (handle_tx, handle_rx) = watch::channel(None);
-    let (messages_tx, messages_rx) = mpsc::channel(1);
+    let (messages_tx, messages_rx) = mpsc::channel(size);
     (
         ElementControl { handle_rx, messages_rx: ReceiverStream::new(messages_rx) },
         ElementControlHandle { handle_tx: Arc::new(handle_tx), messages_tx },
