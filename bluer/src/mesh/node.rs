@@ -117,17 +117,22 @@ impl Node {
         Ok(())
     }
 
-    /// Binds application key to the model.
-    pub async fn bind<'m>(
-        &self, element_path: Path<'m>, address: u16, app_key: u16, model: ModelIdentifier,
-    ) -> Result<()> {
+    /// Create bind configuration message
+    pub fn bind_create<'m>(address: u16, app_key: u16, model: ModelIdentifier) -> Result<ConfigurationMessage> {
         let payload = ModelAppPayload {
             element_address: address.try_into().map_err(|_| InvalidAddress(address.to_string()))?,
             app_key_index: AppKeyIndex::new(app_key),
             model_identifier: model,
         };
 
-        let message = ConfigurationMessage::from(ModelAppMessage::Bind(payload));
+        Ok(ConfigurationMessage::from(ModelAppMessage::Bind(payload)))
+    }
+
+    /// Binds application key to the model.
+    pub async fn bind<'m>(
+        &self, element_path: Path<'m>, address: u16, app_key: u16, model: ModelIdentifier,
+    ) -> Result<()> {
+        let message = Self::bind_create(address, app_key, model)?;
         self.dev_key_send(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
@@ -139,12 +144,8 @@ impl Node {
         Ok(())
     }
 
-    /// Sets publication to the model.
-    pub async fn pub_set<'m>(
-        &self, element_path: Path<'m>, address: u16, pub_address: PublishAddress, app_key: u16,
-        publish_period: PublishPeriod, rxt: PublishRetransmit, model: ModelIdentifier,
-    ) -> Result<()> {
-        // TODO handle period and retransmits better
+    /// Create pub-set configuration message
+    pub fn pub_set_create<'m>( address: u16, pub_address: PublishAddress, app_key: u16, publish_period: PublishPeriod, rxt: PublishRetransmit, model: ModelIdentifier) -> Result<ConfigurationMessage> {
         let details = PublicationDetails {
             element_address: address.try_into().map_err(|_| InvalidAddress(address.to_string()))?,
             publish_address: pub_address,
@@ -158,7 +159,15 @@ impl Node {
 
         let set = ModelPublicationSetMessage { details };
 
-        let message = ConfigurationMessage::from(ModelPublicationMessage::VirtualAddressSet(set));
+        Ok(ConfigurationMessage::from(ModelPublicationMessage::VirtualAddressSet(set)))
+    }
+
+    /// Sets publication to the model.
+    pub async fn pub_set<'m>(
+        &self, element_path: Path<'m>, address: u16, pub_address: PublishAddress, app_key: u16,
+        publish_period: PublishPeriod, rxt: PublishRetransmit, model: ModelIdentifier,
+    ) -> Result<()> {
+        let message = Self::pub_set_create(address, pub_address, app_key, publish_period, rxt, model)?;
         self.dev_key_send(message, element_path.clone(), address, true, 0 as u16).await?;
         Ok(())
     }
