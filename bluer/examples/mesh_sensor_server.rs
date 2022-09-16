@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mesh = session.mesh().await?;
 
-    let (_element_control, element_handle) = element_control();
+    let (_element_control, element_handle) = element_control(5);
     let (app_tx, app_rx) = mpsc::channel(1);
 
     let root_path = Path::from("/mesh_server");
@@ -95,8 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             Some(message) = messages_rx.recv() => {
                 if let Some(ref n) = node {
-                    //n.publish::<BoardSensor>(message, element_path.clone()).await?;
-                    n.send::<BoardSensorMessage>(message, element_path.clone(), 0x00bc as u16, 0 as u16).await?;
+                    n.send::<BoardSensorMessage>(&message, element_path.clone(), 0x00bc as u16, 0 as u16).await?;
                 }
             },
             app_evt = app_stream.next() => {

@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mesh = session.mesh().await?;
 
-    let (element_control, element_handle) = element_control();
+    let (element_control, element_handle) = element_control(5);
     let (app_tx, app_rx) = mpsc::channel(1);
 
     let root_path = Path::from("/mesh_client");
